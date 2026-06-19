@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}인허가 조회{% endblock %}
+{% block content %}
+<h1 class="page-title">인허가 조회 <small>(지방행정 인허가데이터)</small></h1>
+
+<form id="searchForm" class="panel">
+  <div class="row">
+    <label>업종
+      <select name="opnSvcId" id="opnSel">
+        {% for nm, code in industries %}<option value="{{ code }}">{{ nm }}</option>{% endfor %}
+        <option value="__custom__">직접입력(opnSvcId)…</option>
+      </select>
+    </label>
+    <label id="customWrap" style="display:none">opnSvcId 코드
+      <input type="text" name="opnCustom" placeholder="예: 07_24_04_P">
+    </label>
+    <label>지역(시도)
+      <select name="sido">
+        {% for s in sido %}<option>{{ s }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>인허가일 시작 <input type="date" name="bgn"></label>
+    <label>종료 <input type="date" name="end"></label>
+    <label class="grow">사업장명 키워드 <input type="text" name="keyword" placeholder="예: 스타벅스"></label>
+  </div>
+  <div class="row actions">
+    <button type="submit" class="btn primary">조회</button>
+    <button type="button" class="btn" id="csvBtn">CSV 저장</button>
+    <span id="status" class="status"></span>
+  </div>
+  <p class="hint">※ 인허가일 범위를 지정하면 더 빠릅니다. 지역은 주소 기준으로 거릅니다.
+     한 번에 최대 3,000건까지 수집합니다.</p>
+</form>
+
+<div class="result-meta"><span id="count">0건</span></div>
+<div class="table-wrap">
+  <table id="resultTable"><thead></thead><tbody></tbody></table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/license.js') }}"></script>
+{% endblock %}

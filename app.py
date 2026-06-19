@@ -20,10 +20,12 @@ def create_app():
     from blueprints.main import bp as main_bp
     from blueprints.bid import bp as bid_bp
     from blueprints.franchise import bp as franchise_bp
+    from blueprints.license import bp as license_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(bid_bp)
     app.register_blueprint(franchise_bp)
+    app.register_blueprint(license_bp)
     return app
 
 
