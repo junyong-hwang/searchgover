@@ -1,0 +1,17 @@
+# Render.com Blueprint — 무료 웹서비스 1개 정의.
+# Render 대시보드 New + > Blueprint 로 이 저장소를 연결하면 자동 생성됩니다.
+services:
+  - type: web
+    name: gov-data-app
+    runtime: python
+    plan: free
+    region: singapore          # 한국에서 가장 가까운 무료 리전
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: DATA_GO_KR_KEY    # 값은 대시보드에서 직접 입력(저장소에 키 노출 방지)
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}공공데이터 조회{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><a href="{{ url_for('main.index') }}">📊 공공데이터 조회</a></div>
+    <nav>
+      <a href="{{ url_for('main.index') }}" class="{{ 'on' if active=='home' }}">홈</a>
+      <a href="{{ url_for('bid.page') }}" class="{{ 'on' if active=='bid' }}">입찰공고</a>
+      <a href="{{ url_for('franchise.page') }}" class="{{ 'on' if active=='franchise' }}">가맹점 통계</a>
+    </nav>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">
+    <span>출처: 조달청 나라장터 · 공정거래위원회 (data.go.kr OpenAPI)</span>
+  </footer>
+  <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

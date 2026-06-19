@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}입찰공고 조회{% endblock %}
+{% block content %}
+<h1 class="page-title">입찰공고 조회</h1>
+
+<form id="searchForm" class="panel">
+  <div class="row">
+    <label>품목
+      <select name="category">
+        {% for c in categories %}
+        <option {{ 'selected' if c == '물품' }}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>기간유형
+      <select name="dateType">
+        <option>공고일</option><option>입찰마감일</option><option>개찰일</option>
+      </select>
+    </label>
+    <label>시작일 <input type="date" name="start" required></label>
+    <label>종료일 <input type="date" name="end" required></label>
+  </div>
+  <div class="row">
+    <label class="grow">키워드(공고명, 쉼표 OR)
+      <input type="text" name="keyword" placeholder="예: 노트북, 모니터">
+    </label>
+  </div>
+  <div class="row regions">
+    <label class="all"><input type="checkbox" id="regionAll" checked> 전체</label>
+    {% for r in regions %}
+    <label><input type="checkbox" class="region" value="{{ r }}" checked> {{ r }}</label>
+    {% endfor %}
+  </div>
+  <div class="row actions">
+    <button type="submit" class="btn primary">검색</button>
+    <button type="button" class="btn" id="csvBtn">CSV 저장</button>
+    <span id="status" class="status"></span>
+  </div>
+</form>
+
+<div class="result-meta"><span id="count">0건</span></div>
+<div class="table-wrap">
+  <table id="resultTable"><thead></thead><tbody></tbody></table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/bid.js') }}"></script>
+{% endblock %}
