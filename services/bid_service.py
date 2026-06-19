@@ -29,7 +29,7 @@ DATE_TYPE_DIV = {"공고일": "1", "입찰마감일": "2", "개찰일": "3"}
 REGIONS = ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
            "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"]
 
-ROWS_PER_PAGE = 500
+ROWS_PER_PAGE = 999     # API 최대치 — 왕복(페이지) 수를 줄여 속도 향상
 REQUEST_TIMEOUT = 30
 MAX_RETRIES = 2
 
@@ -198,7 +198,7 @@ def _fetch_category(category, div, start_date, end_date, collected, seen):
             if len(items) < ROWS_PER_PAGE or len(collected) >= total:
                 break
             page += 1
-            time.sleep(0.15)
+            time.sleep(0.1)
     return False
 
 
@@ -266,7 +266,7 @@ def iter_search(category, date_type, start_date, end_date, keyword="", regions=N
                     if capped or len(items) < ROWS_PER_PAGE or collected >= total:
                         break
                     page += 1
-                    time.sleep(0.15)
+                    time.sleep(0.1)
                 if capped:
                     break
             if capped:
