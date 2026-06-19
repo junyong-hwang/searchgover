@@ -11,6 +11,7 @@ class Config:
     DATA_GO_KR_KEY = os.environ.get("DATA_GO_KR_KEY", "")
     # SSL 검증 (사내망 등에서 문제 시 False)
     SSL_VERIFY = os.environ.get("SSL_VERIFY", "true").lower() == "true"
-    # 단일 요청에서 수집할 최대 레코드 수 (응답 지연 방지)
-    MAX_RECORDS = int(os.environ.get("MAX_RECORDS", "5000"))
+    # 단일 요청에서 수집할 최대 레코드 수 (웹 응답시간/메모리 보호).
+    # 기간이 매우 길면 이 상한에서 멈추고 'capped'로 알림. 더 키우려면 환경변수로.
+    MAX_RECORDS = int(os.environ.get("MAX_RECORDS", "10000"))
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")

@@ -27,9 +27,11 @@ def api_search():
     except ValueError:
         return jsonify({"ok": False, "error": "날짜 형식(YYYY-MM-DD)이 올바르지 않습니다."}), 400
 
-    if (end - start).days > 366:
-        return jsonify({"ok": False, "error": "조회 기간은 1년 이내로 지정하세요."}), 400
+    if end < start:
+        return jsonify({"ok": False, "error": "종료일이 시작일보다 빠릅니다."}), 400
 
+    # 기간 제한 없음 — 내부에서 월(月) 단위로 분할 호출. 단, 1회 수집은
+    # MAX_RECORDS 에서 멈추고 'capped'로 알린다(웹 응답시간 보호).
     try:
         result = bid_service.search(category, date_type, start, end, keyword, regions)
         return jsonify({"ok": True, **result})
