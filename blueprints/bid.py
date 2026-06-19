@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-"""입찰공고 조회 페이지 모듈 (페이지 + JSON API)."""
+"""입찰공고 조회 페이지 모듈 (페이지 + 스트리밍 API)."""
+import json
 from datetime import datetime
 
-from flask import Blueprint, render_template, request, jsonify
+from flask import (Blueprint, render_template, request, jsonify,
+                   Response, stream_with_context)
 
 from services import bid_service
 
@@ -17,6 +19,7 @@ def page():
 
 @bp.route("/api/search")
 def api_search():
+    """결과를 NDJSON으로 스트리밍 — 페이지가 들어오는 대로 즉시 전송."""
     try:
         category = request.args.get("category", "물품")
         date_type = request.args.get("dateType", "공고일")
@@ -26,16 +29,17 @@ def api_search():
         regions = [r for r in request.args.get("regions", "").split(",") if r]
     except ValueError:
         return jsonify({"ok": False, "error": "날짜 형식(YYYY-MM-DD)이 올바르지 않습니다."}), 400
-
     if end < start:
         return jsonify({"ok": False, "error": "종료일이 시작일보다 빠릅니다."}), 400
 
-    # 기간 제한 없음 — 내부에서 월(月) 단위로 분할 호출. 단, 1회 수집은
-    # MAX_RECORDS 에서 멈추고 'capped'로 알린다(웹 응답시간 보호).
-    try:
-        result = bid_service.search(category, date_type, start, end, keyword, regions)
-        return jsonify({"ok": True, **result})
-    except bid_service.BidApiError as e:
-        return jsonify({"ok": False, "error": str(e)}), 502
-    except Exception as e:
-        return jsonify({"ok": False, "error": f"{type(e).__name__}: {e}"}), 500
+    def generate():
+        try:
+            for ev in bid_service.iter_search(category, date_type, start, end, keyword, regions):
+                yield json.dumps(ev, ensure_ascii=False) + "\n"
+        except Exception as e:  # noqa
+            yield json.dumps({"type": "error", "error": f"{type(e).__name__}: {e}"}) + "\n"
+
+    return Response(stream_with_context(generate()),
+                    mimetype="application/x-ndjson",
+                    headers={"X-Accel-Buffering": "no",          # 프록시 버퍼링 방지
+                             "Cache-Control": "no-cache"})

@@ -202,6 +202,80 @@ def _fetch_category(category, div, start_date, end_date, collected, seen):
     return False
 
 
+def iter_search(category, date_type, start_date, end_date, keyword="", regions=None):
+    """스트리밍 검색 제너레이터. 페이지를 받는 즉시 필터링하여 결과 배치를 yield.
+    이벤트: {"type":"items","rows":[...]} / {"type":"progress",...} /
+            {"type":"done","total","capped"} / {"type":"error","error"}"""
+    if category == "전체":
+        targets = list(ENDPOINTS.keys())
+    elif category in ENDPOINTS:
+        targets = [category]
+    else:
+        yield {"type": "error", "error": "품목은 전체/물품/공사/용역/외자/기타 중 하나여야 합니다."}
+        return
+
+    div = DATE_TYPE_DIV.get(date_type, "1")
+    keywords = [k.strip().lower() for k in keyword.split(",") if k.strip()]
+    regions = regions or []
+    seen = set()
+    matched = 0          # 필터 통과(표시) 건수 → 번호
+    collected = 0        # 수집(원본) 건수 → 상한 기준
+    capped = False
+
+    try:
+        for cat in targets:
+            url = BID_BASE_URL + ENDPOINTS[cat]
+            for cs, ce in _split_months(start_date, end_date):
+                page = 1
+                while True:
+                    params = {
+                        "serviceKey": Config.DATA_GO_KR_KEY,
+                        "pageNo": str(page), "numOfRows": str(ROWS_PER_PAGE),
+                        "inqryDiv": div,
+                        "inqryBgnDt": cs.strftime("%Y%m%d") + "0000",
+                        "inqryEndDt": ce.strftime("%Y%m%d") + "2359",
+                        "type": "xml",
+                    }
+                    xml_text = _request(url, params)
+                    err = _check_api_error(xml_text)
+                    if err:
+                        yield {"type": "error", "error": err}
+                        return
+                    items, total = _parse(xml_text)
+                    batch = []
+                    for r in items:
+                        bid_id = r["공고번호"]
+                        if not bid_id or bid_id in seen:
+                            continue
+                        seen.add(bid_id)
+                        collected += 1
+                        if (_match_kw(r["공고명"], keywords)
+                                and _match_region(r["공고기관"] + r["수요기관"], regions)):
+                            matched += 1
+                            r["번호"] = matched
+                            r["구분"] = cat
+                            batch.append(r)
+                        if collected >= Config.MAX_RECORDS:
+                            capped = True
+                            break
+                    if batch:
+                        yield {"type": "items", "rows": batch}
+                    yield {"type": "progress", "cat": cat,
+                           "collected": collected, "matched": matched,
+                           "period": cs.strftime("%Y-%m")}
+                    if capped or len(items) < ROWS_PER_PAGE or collected >= total:
+                        break
+                    page += 1
+                    time.sleep(0.15)
+                if capped:
+                    break
+            if capped:
+                break
+        yield {"type": "done", "total": matched, "capped": capped}
+    except BidApiError as e:
+        yield {"type": "error", "error": str(e)}
+
+
 def search(category, date_type, start_date, end_date, keyword="", regions=None):
     """입찰공고 검색. category가 '전체'면 모든 종류를 합산한다.
     반환: {"items":[...], "total":n, "capped":bool}"""
